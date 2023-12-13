@@ -1,0 +1,7 @@
+builders:
+  alfred_endpoints_generator:
+    import: "package:alfred_endpoints_generator/alfred_endpoints_generator.dart"
+    builder_factories: ["generateRoutes"]
+    build_extensions: {".dart": ["routes.g.dart"]}
+    auto_apply: dependents
+    build_to: source
