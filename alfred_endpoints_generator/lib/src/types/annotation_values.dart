@@ -7,7 +7,7 @@ class AnnotationValues {
   final alfred.Method method;
   final String path;
 
-  AnnotationValues._(this.method, this.path);
+  const AnnotationValues._(this.method, this.path);
 
   factory AnnotationValues.ofElement(Element element,
       {alfred.Method? defaultMethod}) {
