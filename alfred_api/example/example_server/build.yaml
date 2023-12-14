@@ -1,0 +1,6 @@
+targets:
+  $default:
+    builders:
+      alfred_api:
+        options:
+          my_option: test

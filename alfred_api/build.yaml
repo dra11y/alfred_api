@@ -1,0 +1,7 @@
+builders:
+  alfred_api:
+    import: "package:alfred_api/alfred_api.dart"
+    builder_factories: ["generateApi"]
+    build_extensions: {".dart": ["routes.g.dart", "client.g.dart"]}
+    auto_apply: dependents
+    build_to: cache
