@@ -1,11 +1,9 @@
-import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
 
 import '../types/comment.dart';
 import '../types/types.dart';
-
-import 'method_info.dart';
+import 'old_method_info.dart';
 import 'typed_param.dart';
 
 class EndpointGenerator {
@@ -33,7 +31,7 @@ class EndpointGenerator {
   }
 
   Block _generateMethodCall(MethodElement instanceMethod) {
-    final methodInfo = MethodInfo(
+    final methodInfo = OldMethodInfo(
       endpointClass: endpointClass,
       instanceMethod: instanceMethod,
       endpointValues: endpointValues,

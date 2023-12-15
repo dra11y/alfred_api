@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:alfred_api/src/builders/endpoint_visitor.dart';
+import 'package:alfred_api/src/builders/endpoint_info.dart';
+import 'package:alfred_api/src/builders/library_visitor.dart';
 import 'package:alfred_api/src/types/comment.dart';
+import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:alfred_api_annotation/alfred_api_annotation.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -35,8 +39,26 @@ class AlfredApiBuilder implements Builder {
   final _endpointClassFinder =
       ClassFinder(filter: (c) => endpointChecker.isSuperOf(c));
 
+  final List<EndpointInfo> endpointInfos = [];
+
   @override
   Future<void> build(BuildStep buildStep) async {
+    await for (final input in buildStep.findAssets(Glob('lib/**/*.dart'))) {
+      final library = await buildStep.resolver.libraryFor(input);
+      final libraryVisitor = LibraryVisitor();
+      library.visitChildren(libraryVisitor);
+      final typeImports = libraryVisitor.typeImports;
+      for (final endpoint in libraryVisitor.endpoints) {
+        final endpointVisitor = EndpointVisitor(endpoint, typeImports);
+        endpoint.visitChildren(endpointVisitor);
+        endpointInfos.add(EndpointInfo(endpoint, endpointVisitor.methods));
+      }
+      // print('visitor.typeImports = ${visitor.typeImports}');
+      // print('visitor.endpoints = ${visitor.endpoints}');
+    }
+    print('ENDPOINTS: $endpointInfos');
+    return;
+
     List<ClassElement> endpointClasses =
         await _endpointClassFinder.find(buildStep);
 

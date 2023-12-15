@@ -10,9 +10,9 @@ class AnnotationValues {
   const AnnotationValues._(this.method, this.path);
 
   factory AnnotationValues.ofElement(Element element,
-      {alfred.Method? defaultMethod}) {
-    alfred.Method method = defaultMethod ?? alfred.Method.get;
-    String path = '';
+      {AnnotationValues? defaults}) {
+    alfred.Method method = defaults?.method ?? alfred.Method.get;
+    String path = defaults?.path ?? '';
     for (final annotation in element.metadata) {
       final value = annotation.computeConstantValue();
       final type = Annotations.from(element, annotation, value);
@@ -21,9 +21,18 @@ class AnnotationValues {
           final index = value!.getField('index')!.toIntValue()!;
           method = alfred.Method.values[index];
         case Annotations.path:
-          path = value!.getField('path')!.toStringValue()!.normalizePath;
+          path = [
+            defaults?.path,
+            value!.getField('path')!.toStringValue(),
+          ].whereType<String>().join('/').normalizePath;
       }
     }
     return AnnotationValues._(method, path);
   }
+
+  @override
+  String toString() => '''AnnotationValues(
+    method: $method,
+    path: $path
+  )''';
 }
