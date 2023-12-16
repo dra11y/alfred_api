@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:alfred_api/src/builders/endpoint_visitor.dart';
 import 'package:alfred_api/src/builders/endpoint_info.dart';
+import 'package:alfred_api/src/builders/endpoint_visitor.dart';
 import 'package:alfred_api/src/builders/library_visitor.dart';
+import 'package:alfred_api/src/builders/method_info.dart';
 import 'package:alfred_api/src/types/comment.dart';
-import 'package:glob/glob.dart';
-import 'package:path/path.dart' as path;
 import 'package:alfred_api_annotation/alfred_api_annotation.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
-
+import 'package:glob/glob.dart';
+import 'package:path/path.dart' as path;
 import 'package:pubspec2/pubspec2.dart';
 import 'package:source_gen/source_gen.dart';
 
-import '../extensions/extensions.dart';
 import '../constants.dart';
+import '../extensions/extensions.dart';
 import '../types/types.dart';
 import 'class_finder.dart';
 import 'code_formatter.dart';
 import 'endpoint_generator.dart';
+import 'old_endpoint_generator.dart';
 
 class AlfredApiBuilder implements Builder {
   final BuilderOptions options;
@@ -39,7 +39,7 @@ class AlfredApiBuilder implements Builder {
   final _endpointClassFinder =
       ClassFinder(filter: (c) => endpointChecker.isSuperOf(c));
 
-  final List<EndpointInfo> endpointInfos = [];
+  final List<EndpointInfo> endpoints = [];
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -48,25 +48,45 @@ class AlfredApiBuilder implements Builder {
       final libraryVisitor = LibraryVisitor();
       library.visitChildren(libraryVisitor);
       final typeImports = libraryVisitor.typeImports;
+      final Map<PathRecord, (EndpointInfo, MethodInfo)> pathRecords = {};
       for (final endpoint in libraryVisitor.endpoints) {
         final endpointVisitor = EndpointVisitor(endpoint, typeImports);
         endpoint.visitChildren(endpointVisitor);
-        endpointInfos.add(EndpointInfo(endpoint, endpointVisitor.methods));
+        final info = EndpointInfo(endpoint, endpointVisitor.methods);
+        for (final m2 in info.methods) {
+          if (pathRecords.keys.contains(m2.pathRecord)) {
+            final (e1, m1) = pathRecords[m2.pathRecord]!;
+            throw Exception(
+                'Duplicate path: ${m2.pathRecord} at ${info.endpoint.name}#${m2.name}; already defined at ${e1.name}#${m1.name}');
+          }
+          pathRecords[m2.pathRecord] = (info, m2);
+        }
+        // for (final e1 in endpoints) {
+        //   for (final m1 in e1.methods.entries) {
+        //     if (m)
+        //     print('pathRecord: $pathRecord');
+        //     if (pathRecords.keys.contains(pathRecord)) {
+        //       final e2 = pathRecords[pathRecord]!;
+        //       final m2 = e2.methods.firstWhere((m) => m == m1);
+        //       throw Exception(
+        //           'Duplicate path: $pathRecord defined at $e1, $m1 and $e2, $m2');
+        //     }
+        //   }
+        // }
+        endpoints.add(info);
       }
       // print('visitor.typeImports = ${visitor.typeImports}');
       // print('visitor.endpoints = ${visitor.endpoints}');
     }
-    print('ENDPOINTS: $endpointInfos');
-    return;
 
-    List<ClassElement> endpointClasses =
-        await _endpointClassFinder.find(buildStep);
+    print('ENDPOINTS: $endpoints');
 
-    if (endpointClasses.isEmpty) {
-      return;
-    }
+    // List<ClassElement> endpointClasses =
+    //     await _endpointClassFinder.find(buildStep);
 
-    final pathRecords = <PathRecord>[];
+    // if (endpointClasses.isEmpty) {
+    //   return;
+    // }
 
     final serverGenerated = Library((b) => b
       ..comments.add(_generatedComment)
@@ -79,8 +99,7 @@ class AlfredApiBuilder implements Builder {
               ..name = 'addEndpointRoutes'
               ..returns = refer('void')
               ..body = Block.of(
-                endpointClasses
-                    .map((c) => EndpointGenerator(c, pathRecords).generate()),
+                endpoints.map((e) => EndpointGenerator(e).generate()),
               )),
           )),
       )).accept(_emitter).toString();

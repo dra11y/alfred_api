@@ -18,8 +18,7 @@ class EndpointVisitor extends SimpleElementVisitor<void> {
   void visitMethodElement(MethodElement element) {
     final annotationValues = AnnotationValues.ofElement(element,
         defaults: AnnotationValues.ofElement(endpoint));
-    print('annotationValues: $annotationValues');
-    final info = MethodInfo(
+    final methodInfo = MethodInfo(
       element: element,
       method: annotationValues.method,
       path: annotationValues.path,
@@ -39,8 +38,6 @@ class EndpointVisitor extends SimpleElementVisitor<void> {
         import: typeImports[element.returnType],
       ),
     );
-    print(info);
-    methods.add(info);
-    print('visitMethodElement: $element');
+    methods.add(methodInfo);
   }
 }

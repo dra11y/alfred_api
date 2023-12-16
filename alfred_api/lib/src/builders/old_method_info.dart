@@ -19,7 +19,7 @@ class OldMethodInfo {
     methodValues.path
   ].whereType<String>().join('/').normalizePath}';
   late final method = methodValues.method;
-  late final PathRecord pathRecord = (path, method);
+  late final pathRecord = PathRecord(path, method);
   late final params = path
       .split('/')
       .where((p) => p.startsWith(':'))
