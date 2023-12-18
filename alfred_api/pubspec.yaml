@@ -21,6 +21,10 @@ dependencies:
   dart_style: ^2.3.4
   pubspec2: ^4.0.0
   collection: ^1.18.0
+  logging: ^1.2.0
+  example_models:
+    path: /Users/tom/alfred_api/alfred_api/example/example_models
+  equatable: ^2.0.5
 
 dev_dependencies:
   lints: ^2.1.0

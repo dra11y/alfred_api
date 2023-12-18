@@ -1,4 +1,5 @@
 import 'package:alfred_api/src/builders/method_info.dart';
+import 'package:alfred_api/src/extensions/let_extension.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 class EndpointInfo {
@@ -6,6 +7,9 @@ class EndpointInfo {
 
   final ClassElement endpoint;
   final List<MethodInfo> methods;
+
+  Uri? get import =>
+      endpoint.location?.components.firstOrNull?.let((s) => Uri.parse(s));
 
   late final String name = endpoint.name;
 

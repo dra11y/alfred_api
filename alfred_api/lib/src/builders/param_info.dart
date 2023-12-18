@@ -1,4 +1,5 @@
 import 'package:alfred_api/src/builders/type_info.dart';
+import 'package:code_builder/src/specs/reference.dart';
 
 class ParamInfo extends TypeInfo {
   const ParamInfo({
@@ -9,6 +10,8 @@ class ParamInfo extends TypeInfo {
   });
 
   final String name;
+
+  Reference get ref => Reference(name);
 
   @override
   String toString() => '''ParamInfo(

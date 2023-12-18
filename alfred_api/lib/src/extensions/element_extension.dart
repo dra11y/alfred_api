@@ -18,6 +18,13 @@ extension ElementExtension on Element {
     return FileAndLine(uri, location);
   }
 
+  Future<ElementDeclarationResult?> getResolvedDeclaration() async {
+    final resolvedLib = await session!.getResolvedLibraryByElement(library!);
+    return resolvedLib is ResolvedLibraryResult
+        ? resolvedLib.getElementDeclaration(this)
+        : null;
+  }
+
   ElementDeclarationResult? getElementDeclaration() {
     final parsedLib = session!.getParsedLibraryByElement(library!);
     return parsedLib is ParsedLibraryResult

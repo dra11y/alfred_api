@@ -1,6 +1,15 @@
+import 'dart:io';
+
 import 'package:alfred/alfred.dart';
 import 'package:alfred_api_annotation/alfred_api_annotation.dart';
 import 'package:example_models/example_models.dart';
+
+final memberTypeHandler =
+    TypeHandler<Map<String, Member>>((HttpRequest req, HttpResponse res, val) {
+  res.headers.contentType = ContentType.json;
+  res.write(val.values.map((v) => v.toJson()));
+  return res.close();
+});
 
 @Path('/members')
 class MembersEndpoint extends Endpoint {
@@ -17,12 +26,12 @@ class MembersEndpoint extends Endpoint {
 
   @Path(':id')
   @Method.put
-  Future<Member?> update(Member member) async {
-    return member;
+  Future<String?> update(Member member) async {
+    return member.toString();
   }
 
   @Method.post
-  Future<Member?> create(Member member) async {
+  Future<Member?> create(HttpRequest testparam, Member member) async {
     return member;
   }
 }
