@@ -1,21 +1,25 @@
-import 'package:alfred_api/src/builders/library_visitor.dart';
+import 'dart:collection';
+
 import 'package:alfred_api/src/builders/method_info.dart';
 import 'package:alfred_api/src/builders/param_info.dart';
 import 'package:alfred_api/src/builders/type_handler_type.dart';
 import 'package:alfred_api/src/builders/type_info.dart';
 import 'package:alfred_api/src/extensions/dart_type_extension.dart';
+import 'package:alfred_api/src/extensions/let_extension.dart';
 import 'package:alfred_api/src/types/types.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/visitor.dart';
-import 'package:collection/collection.dart';
 
 class EndpointVisitor extends SimpleElementVisitor<void> {
   final ClassElement endpoint;
-  final Map<DartType, Uri> typeImports;
-  final Set<TypeHandlerType> typeHandlerTypes;
+  final UnmodifiableMapView<DartType, Uri> typeImports;
+  final UnmodifiableSetView<TypeHandlerType> typeHandlerTypes;
 
-  final List<MethodInfo> methods = [];
+  UnmodifiableListView<MethodInfo> get methods =>
+      UnmodifiableListView(_methods);
+
+  final List<MethodInfo> _methods = [];
 
   EndpointVisitor(this.endpoint, this.typeImports, this.typeHandlerTypes);
 
@@ -24,9 +28,9 @@ class EndpointVisitor extends SimpleElementVisitor<void> {
     final annotationValues = AnnotationValues.ofElement(element,
         defaults: AnnotationValues.ofElement(endpoint));
 
-    final flatType = element.returnType.flatNonNull;
-    final typeHandlerType = typeHandlerTypes
-        .firstWhereOrNull((tht) => tht.isAssignableFromType(flatType));
+    final flatReturnType = element.returnType.flatNonNull();
+    final hasTypeHandler =
+        typeHandlerTypes.any((t) => t.isAssignableFromType(flatReturnType));
 
     final methodInfo = MethodInfo(
       element: element,
@@ -35,21 +39,22 @@ class EndpointVisitor extends SimpleElementVisitor<void> {
       path: annotationValues.path,
       params: element.parameters
           .map(
-            (p) => ParamInfo(
-              name: p.name,
-              type: p.type,
-              flatType: p.type.flat,
-              import: typeImports[p.type.flat],
-            ),
+            (param) => param.type.flatten().let((flatParamType) => ParamInfo(
+                  name: param.name,
+                  type: param.type,
+                  flatType: flatParamType,
+                  import: typeImports[flatParamType],
+                )),
           )
           .toList(),
       returnType: TypeInfo(
         type: element.returnType,
-        flatType: flatType,
-        import: typeImports[flatType],
+        flatType: flatReturnType,
+        import: typeImports[flatReturnType],
       ),
-      typeHandlerType: typeHandlerType,
+      hasTypeHandler: hasTypeHandler,
     );
-    methods.add(methodInfo);
+
+    _methods.add(methodInfo);
   }
 }

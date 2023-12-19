@@ -1,4 +1,6 @@
+import 'package:alfred_api/src/extensions/extensions.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:ansicolor/ansicolor.dart';
 import 'package:code_builder/code_builder.dart';
 
 class TypeInfo {
@@ -17,8 +19,9 @@ class TypeInfo {
 
   @override
   String toString() => '''TypeInfo(
+    flatType: ${flatType.getDisplayString(withNullability: true).color(AnsiPen()..yellow())},
     type: ${type.getDisplayString(withNullability: true)},
-    flatType: ${flatType.getDisplayString(withNullability: true)},
     import: $import,
-  )''';
+  )'''
+      .color(AnsiPen()..magenta());
 }

@@ -7,18 +7,18 @@ extension DartTypeExtension on DartType {
 
   TypeSystem get typeSystem => element!.library!.typeSystem;
 
-  bool get isList => flatNonNull.isDartCoreList;
-  bool get isMap => flatNonNull.isDartCoreMap;
+  bool isList() => flatNonNull().isDartCoreList;
+  bool isMap() => flatNonNull().isDartCoreMap;
 
   DartType? get listType {
-    final t = flatNonNull;
+    final t = flatNonNull();
     return t is ParameterizedType && t.isDartCoreList
         ? t.typeArguments.first
         : null;
   }
 
   DartType? get jsonMapType {
-    final t = flatNonNull;
+    final t = flatNonNull();
     return t is ParameterizedType &&
             t.isDartCoreMap &&
             _stringType.isExactlyType(t.typeArguments.first)
@@ -26,7 +26,7 @@ extension DartTypeExtension on DartType {
         : null;
   }
 
-  DartType get flatNonNull => flat.nonNull;
-  DartType get nonNull => typeSystem.promoteToNonNull(this);
-  DartType get flat => typeSystem.flatten(this);
+  DartType flatNonNull() => flatten().nonNull();
+  DartType nonNull() => typeSystem.promoteToNonNull(this);
+  DartType flatten() => typeSystem.flatten(this);
 }

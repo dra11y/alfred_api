@@ -7,7 +7,6 @@ import 'package:alfred_api_annotation/alfred_api_annotation.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/visitor.dart';
-import 'package:equatable/equatable.dart';
 import 'package:source_gen/source_gen.dart';
 
 import '../types/types.dart';
@@ -15,11 +14,19 @@ import 'endpoint_visitor.dart';
 import 'method_info.dart';
 
 class LibraryVisitor extends RecursiveElementVisitor<void> {
-  final Map<DartType, Uri> typeImports = {};
-  final List<ClassElement> _endpointClasses = [];
-  final Set<TypeHandlerType> typeHandlerTypes = {};
+  UnmodifiableMapView<DartType, Uri> get typeImports =>
+      UnmodifiableMapView(_typeImports);
+  UnmodifiableListView<ClassElement> get endpointClasses =>
+      UnmodifiableListView(_endpointClasses);
+  UnmodifiableSetView<TypeHandlerType> get typeHandlerTypes =>
+      UnmodifiableSetView(_typeHandlerTypes);
+
   UnmodifiableListView<EndpointInfo> get endpoints =>
       UnmodifiableListView(_endpoints);
+
+  final Map<DartType, Uri> _typeImports = {};
+  final List<ClassElement> _endpointClasses = [];
+  final Set<TypeHandlerType> _typeHandlerTypes = {};
   late final List<EndpointInfo> _endpoints;
 
   final Map<PathRecord, (EndpointInfo, MethodInfo)> _pathRecords = {};
@@ -28,6 +35,14 @@ class LibraryVisitor extends RecursiveElementVisitor<void> {
 
   static const _endpointType = TypeChecker.fromRuntime(Endpoint);
   static const _typeHandlerType = TypeChecker.fromRuntime(TypeHandler);
+
+  void addTypeHandlerTypes(Set<TypeHandlerType> types) {
+    for (final type in types) {
+      if (!_typeHandlerTypes.add(type)) {
+        throw Exception('Duplicate TypeHandlerType: $type');
+      }
+    }
+  }
 
   void visitCollected() {
     _endpoints = [];
@@ -77,7 +92,7 @@ class LibraryVisitor extends RecursiveElementVisitor<void> {
         .map((element) => element.thisType);
 
     for (final export in exports) {
-      typeImports[export] = library.source.uri;
+      _typeImports[export] = library.source.uri;
     }
     super.visitLibraryImportElement(element);
   }
@@ -88,7 +103,7 @@ class LibraryVisitor extends RecursiveElementVisitor<void> {
     if (_typeHandlerType.isExactlyType(returnType) &&
         returnType is ParameterizedType) {
       print('add TypeHandler for type: ${returnType.typeArguments.first}');
-      typeHandlerTypes
+      _typeHandlerTypes
           .add(TypeHandlerType.custom(returnType.typeArguments.first));
     }
     super.visitPropertyAccessorElement(element);

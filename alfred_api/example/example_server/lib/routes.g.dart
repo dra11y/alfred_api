@@ -7,29 +7,29 @@ import 'package:example_server/src/members_endpoint.dart' as _i2;
 
 extension AlfredEndpointRoutesExtension on _i1.Alfred {
   void addEndpointRoutes() {
-    /// GET MembersEndpoint.all
+    /// GET members.all
     get('members', (req, res) async {
-      final endpoint = _i2.MembersEndpoint(req, res);
+      final endpoint = _i2.members(req, res);
       await endpoint.all();
     });
 
-    /// GET MembersEndpoint.find
+    /// GET members.find
     get('members/:id', (req, res) async {
-      final endpoint = _i2.MembersEndpoint(req, res);
+      final endpoint = _i2.members(req, res);
       final String id = req.params['id'];
       await endpoint.find(id);
     });
 
-    /// PUT MembersEndpoint.update
+    /// PUT members.update
     put('members/:id', (req, res) async {
-      final endpoint = _i2.MembersEndpoint(req, res);
+      final endpoint = _i2.members(req, res);
       final _i3.Member member = req.params['member'];
       await endpoint.update(member);
     });
 
-    /// POST MembersEndpoint.create
+    /// POST members.create
     post('members', (req, res) async {
-      final endpoint = _i2.MembersEndpoint(req, res);
+      final endpoint = _i2.members(req, res);
       final _i1.HttpRequest testparam = req.params['testparam'];
       final _i3.Member member = req.params['member'];
       await endpoint.create(testparam, member);

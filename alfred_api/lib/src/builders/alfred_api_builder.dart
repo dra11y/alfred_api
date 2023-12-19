@@ -37,7 +37,7 @@ class AlfredApiBuilder implements Builder {
     await for (final input in buildStep.findAssets(Glob('lib/**/*.dart'))) {
       final library = await buildStep.resolver.libraryFor(input);
       await alfredVisitor.visitAlfredOnce(library, buildStep, (visitor) {
-        libraryVisitor.typeHandlerTypes.addAll(visitor.typeHandlerTypes);
+        libraryVisitor.addTypeHandlerTypes(visitor.typeHandlerTypes);
       });
       library.visitChildren(libraryVisitor);
     }
