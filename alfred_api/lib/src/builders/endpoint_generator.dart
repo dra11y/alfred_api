@@ -23,8 +23,8 @@ class EndpointGenerator {
   }
 
   Block _generateMethodCall(MethodInfo methodInfo) {
-    if (methodInfo.params.toSet().length != methodInfo.params.length) {
-      throw Exception('Duplicate parameters: ${methodInfo.params}}');
+    if (methodInfo.allParams.toSet().length != methodInfo.allParams.length) {
+      throw Exception('Duplicate parameters: ${methodInfo.allParams}}');
     }
 
     final routeMethod = Method((b) => b
@@ -37,38 +37,29 @@ class EndpointGenerator {
     final routeParams =
         routeMethod.requiredParameters.map((p) => refer(p.name));
 
-    final constructor = Reference(endpoint.name, endpoint.import.toString());
-
-    // for (final param in methodInfo.params) {
-    //   print('param: ${param.name}, uri: ${param.import}');
-    // }
-    // final app = Alfred();
-    // for (final type in HttpRouteParam.paramTypes) {
-    //   log.info('paramType: ${type.parse}');
-    // }
-    // final List<TypeHandler> typeHandlers = app.typeHandlers;
-    // for (final handler in typeHandlers) {
-    //   log.info('typeHandler: $handler');
-    // }
-
     return Block.of([
       Comment.doc(
-              '${methodInfo.method.name.toUpperCase()} ${endpoint.name}.${methodInfo.name}')
+              '${methodInfo.method.name.toUpperCase()} ${endpoint.clientGetterName}.${methodInfo.name}')
           .code,
-      refer(methodInfo.method.name).call([
+      refer(methodInfo.method.name)([
         literalString(methodInfo.path),
         (routeMethod.toBuilder()
               ..body = Block.of([
                 declareFinal(_endpoint)
-                    .assign(constructor.call(routeParams))
+                    .assign(endpoint.serverConstructor(routeParams))
                     .statement,
-                for (final param in methodInfo.params)
+                for (final param in methodInfo.allParams)
                   declareFinal(param.name, type: param.typeRef)
                       .assign(refer("$_req.params['${param.name}']"))
                       .statement,
-                refer('$_endpoint.${methodInfo.name}').awaited.call([
-                  for (final param in methodInfo.params) param.ref,
-                ]).statement,
+                refer('$_endpoint.${methodInfo.name}')
+                    .awaited
+                    .call([
+                      for (final param in methodInfo.positionalParams)
+                        param.ref,
+                    ], methodInfo.namedParamsMap)
+                    .returned
+                    .statement,
               ]))
             .build()
             .closure

@@ -1,3 +1,4 @@
+import 'package:alfred_api/src/extensions/extensions.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:equatable/equatable.dart';
 import 'package:source_gen/source_gen.dart';
@@ -19,7 +20,8 @@ class TypeHandlerType extends Equatable {
 
   @override
   String toString() => '''TypeHandlerType(
-    type: $type,
+    type: ${type.toString().color(Pens.yellow)},
     isDefault: $isDefault,
-  )''';
+  )'''
+      .color(Pens.cyan);
 }

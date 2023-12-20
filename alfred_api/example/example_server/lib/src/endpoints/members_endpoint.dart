@@ -11,7 +11,8 @@ final memberTypeHandler =
   return res.close();
 });
 
-@Path('/members')
+@Path('members')
+@Version(1)
 class MembersEndpoint extends Endpoint {
   MembersEndpoint(super.req, super.res);
 
@@ -20,18 +21,19 @@ class MembersEndpoint extends Endpoint {
   }
 
   @Path(':id')
-  Future<Member?> find(String id) async {
+  Future<Member?> find(String id,
+      {required String lastName, String? firstName}) async {
     return Member(name: 'Tom');
   }
 
   @Path(':id')
   @Method.put
-  Future<String?> update(Member member) async {
+  Future<String?> update(Member member, String? name) async {
     return member.toString();
   }
 
   @Method.post
-  Future<Member?> create(HttpRequest testparam, Member member) async {
+  Future<Member?> create(Member member) async {
     return member;
   }
 }

@@ -71,18 +71,18 @@ class OldEndpointGenerator {
       Comment.doc(
               '${methodInfo.method.name.toUpperCase()} ${methodInfo.endpointClassName}.${methodInfo.name}')
           .code,
-      refer(methodInfo.method.name).call([
+      refer(methodInfo.method.name)([
         literalString(methodInfo.path),
         (routeMethod.toBuilder()
               ..body = Block.of([
                 declareFinal(_endpoint)
-                    .assign(constructor.call(routeParams))
+                    .assign(constructor(routeParams))
                     .statement,
                 for (final param in pathParams)
-                  declareFinal(param.name, type: param.typeRef)
+                  declareFinal(param.name, type: param.ref)
                       .assign(refer("$_req.params['${param.name}']"))
                       .statement,
-                refer('$_endpoint.${methodInfo.name}').awaited.call([
+                refer('$_endpoint.${methodInfo.name}').awaited([
                   for (final param in pathParams) param.ref,
                 ]).statement,
               ]))

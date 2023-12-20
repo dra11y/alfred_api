@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
 
 class CodeFormatter {
@@ -18,9 +19,16 @@ class CodeFormatter {
         message = '${e.message}\n\n${e.stackTrace}';
       } else if (e is FormatException) {
         message = '${e.message}\n\noffset: ${e.offset}';
+      } else if (e is FormatterException) {
+        message = e.message(color: true);
       }
+      final lineNumberedCode = unformattedCode
+          .split('\n')
+          .mapIndexed(
+              (index, line) => '${(index + 1).toString().padLeft(3)}. $line')
+          .join('\n');
       print(
-          '\nERROR: ${e.runtimeType}: $message\n\n\nGENERATED:\n\n$unformattedCode');
+          '\nERROR: ${e.runtimeType}: $message\n\n\nGENERATED:\n\n$lineNumberedCode');
       exit(1);
     }
   }

@@ -1,26 +1,36 @@
 import 'package:alfred_api/src/builders/method_info.dart';
 import 'package:alfred_api/src/extensions/extensions.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:ansicolor/ansicolor.dart';
+import 'package:code_builder/code_builder.dart';
 
 class EndpointInfo {
-  EndpointInfo(this.endpoint, this.methods);
+  EndpointInfo(this.element, this.methods);
 
-  final ClassElement endpoint;
+  final ClassElement element;
   final List<MethodInfo> methods;
 
-  Uri? get import =>
-      endpoint.location?.components.firstOrNull?.let((s) => Uri.parse(s));
+  late final Uri? import =
+      element.location?.components.firstOrNull?.let((s) => Uri.parse(s));
 
-  late final String name = endpoint.name
+  late final String serverClassName = element.name;
+  late final String clientClassName =
+      '${serverClassName.replaceFirst('Endpoint', '')}Client';
+
+  late final String clientGetterName = serverClassName
       .replaceFirst(RegExp(r'endpoint', caseSensitive: false), '')
       .toLowerCase();
 
+  late final Reference serverConstructor =
+      Reference(serverClassName, import.toString());
+
+  late final Reference clientConstructor = Reference(clientClassName);
+
   @override
   String toString() => '''EndpointInfo(
-    endpoint: $endpoint,
-    name: ${name.color(AnsiPen()..yellow())},
+    name: ${clientGetterName.color(Pens.yellow)},
+    element: $element,
+    import: $import,
     methods: $methods
   )'''
-      .color(AnsiPen()..green());
+      .color(Pens.green);
 }

@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:alfred_api/src/builders/alfred_visitor.dart';
 import 'package:alfred_api/src/builders/asset_copier.dart';
+import 'package:alfred_api/src/builders/client_generator.dart';
 import 'package:alfred_api/src/builders/library_visitor.dart';
-import 'package:alfred_api/src/types/comment.dart';
+import 'package:alfred_api/src/builders/type_handler_generator.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:glob/glob.dart';
@@ -23,8 +24,15 @@ class AlfredApiBuilder implements Builder {
 
   static const _alfredUrl = 'package:alfred/alfred.dart';
   static const _generatedComment = 'GENERATED CODE - DO NOT MODIFY BY HAND';
+  static const _addEndpointRoutes = 'addEndpointRoutes';
+  static const _alfredExtensionName = 'AlfredEndpointRoutesExtension';
 
-  final _emitter = DartEmitter.scoped(
+  final _serverEmitter = DartEmitter.scoped(
+    orderDirectives: true,
+    useNullSafetySyntax: true,
+  );
+
+  final _clientEmitter = DartEmitter.scoped(
     orderDirectives: true,
     useNullSafetySyntax: true,
   );
@@ -34,17 +42,27 @@ class AlfredApiBuilder implements Builder {
     final libraryVisitor = LibraryVisitor();
     final alfredVisitor = AlfredVisitor();
 
-    await for (final input in buildStep.findAssets(Glob('lib/**/*.dart'))) {
+    await for (final input in buildStep.findAssets(Glob('**/*.dart'))) {
       final library = await buildStep.resolver.libraryFor(input);
+      print('NEW LIBRARY: $library');
+      print('library.enclosingElement: ${library.enclosingElement}');
       await alfredVisitor.visitAlfredOnce(library, buildStep, (visitor) {
         libraryVisitor.addTypeHandlerTypes(visitor.typeHandlerTypes);
       });
-      library.visitChildren(libraryVisitor);
+
+      /// Why isn't there an element.visitSelf?
+      ///
+      /// Calling: library.visitChildren(libraryVisitor);
+      /// skips the library itself. Since we're using a recursive
+      /// visitor, we need only visit the library itself.
+      libraryVisitor.visitLibraryElement(library);
     }
 
     libraryVisitor.visitCollected();
 
-    print('libraryVisitor.endpoints:\n${libraryVisitor.endpoints}');
+    print('libraryVisitor.endpoints: ${libraryVisitor.endpoints}');
+    print('libraryVisitor.typeHandlers: ${libraryVisitor.typeHandlers}');
+    // print('libraryVisitor.resolvedTypes: ${libraryVisitor.resolvedTypes}');
 
     if (libraryVisitor.endpoints.isEmpty) {
       log.warning('No endpoints found!');
@@ -52,27 +70,44 @@ class AlfredApiBuilder implements Builder {
     }
 
     final serverGenerated = Library((b) => b
-      ..comments.add(_generatedComment)
+      ..comments.addAll([
+        _generatedComment,
+        '',
+        'GENERATED SERVER CODE',
+        '',
+        'Import this file into the file where you initialize Alfred:',
+        'final app = Alfred();',
+        '',
+        'Then add:',
+        'app.$_addEndpointRoutes();',
+      ])
       ..body.add(
         Extension((b) => b
-          ..name = 'AlfredEndpointRoutesExtension'
+          ..name = _alfredExtensionName
           ..on = refer('Alfred', _alfredUrl)
           ..methods.add(
             Method((b) => b
-              ..name = 'addEndpointRoutes'
+              ..name = _addEndpointRoutes
               ..returns = refer('void')
-              ..body = Block.of(
-                libraryVisitor.endpoints
+              ..body = Block.of([
+                TypeHandlerGenerator(libraryVisitor.typeHandlers).generate(),
+                ...libraryVisitor.endpoints
                     .map((e) => EndpointGenerator(e).generate()),
-              )),
+              ])),
           )),
-      )).accept(_emitter).toString();
+      )).accept(_serverEmitter).toString();
 
     final clientGenerated = Library((b) => b
-      ..comments.add(_generatedComment)
-      ..body.add(
-        Comment.doc('This is a test'),
-      )).accept(_emitter).toString();
+      ..comments.addAll([
+        _generatedComment,
+        '',
+        'GENERATED CLIENT CODE',
+        '',
+      ])
+      ..body.addAll(
+        ClientGenerator(libraryVisitor.endpoints, libraryVisitor.resolvedTypes)
+            .generateList(),
+      )).accept(_clientEmitter).toString();
 
     final serverFormatted =
         CodeFormatter(removeTrailingCommas(serverGenerated)).format();

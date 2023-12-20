@@ -1,27 +1,29 @@
 import 'package:alfred_api/src/builders/type_info.dart';
-import 'package:alfred_api/src/extensions/color_extension.dart';
+import 'package:alfred_api/src/extensions/string_extension.dart';
 import 'package:alfred_api/src/extensions/extensions.dart';
-import 'package:ansicolor/ansicolor.dart';
 import 'package:code_builder/code_builder.dart';
 
 class ParamInfo extends TypeInfo {
-  const ParamInfo({
+  ParamInfo({
     required this.name,
     required super.type,
-    required super.flatType,
-    required super.import,
+    required this.ref,
+    required super.typeRef,
   });
 
+  @override
   final String name;
 
-  Reference get ref => Reference(name);
+  @override
+  final Reference ref;
 
   @override
   String toString() => '''ParamInfo(
-    name: ${name.color(AnsiPen()..yellow())},
+    name: ${name.color(Pens.yellow)},
     type: ${type.getDisplayString(withNullability: true)},
     flatType: ${flatType.getDisplayString(withNullability: true)},
-    import: $import,
+    ref: ${ref.expression.code}, url: ${ref.url},
+    typeRef: ${typeRef.expression.code}, url: ${typeRef.url},
   )'''
-      .color(AnsiPen()..magenta());
+      .color(Pens.magenta);
 }

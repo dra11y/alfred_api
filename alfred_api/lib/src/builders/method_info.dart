@@ -1,11 +1,10 @@
 import 'package:alfred/alfred.dart';
 import 'package:alfred_api/src/builders/param_info.dart';
 import 'package:alfred_api/src/builders/type_info.dart';
-import 'package:alfred_api/src/extensions/color_extension.dart';
 import 'package:alfred_api/src/extensions/extensions.dart';
 import 'package:alfred_api/src/types/types.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:ansicolor/ansicolor.dart';
+import 'package:code_builder/code_builder.dart' hide Method;
 
 class MethodInfo {
   MethodInfo({
@@ -13,7 +12,8 @@ class MethodInfo {
     required this.import,
     required this.method,
     required this.path,
-    required this.params,
+    required this.positionalParams,
+    required this.namedParams,
     required this.returnType,
     required this.hasTypeHandler,
   });
@@ -22,7 +22,12 @@ class MethodInfo {
   final Uri import;
   final Method method;
   final String path;
-  final List<ParamInfo> params;
+  final List<ParamInfo> positionalParams;
+  final List<ParamInfo> namedParams;
+  Map<String, Expression> get namedParamsMap => {
+        for (final param in namedParams) param.name: param.ref,
+      };
+  List<ParamInfo> get allParams => positionalParams + namedParams;
   final TypeInfo returnType;
   final bool hasTypeHandler;
 
@@ -31,13 +36,14 @@ class MethodInfo {
 
   @override
   String toString() => '''MethodInfo(
-    name: ${name.color(AnsiPen()..yellow())},
-    path: ${path.color(AnsiPen()..yellow())},
+    name: ${name.color(Pens.yellow)},
+    method: ${method.name.toUpperCase().color(Pens.yellow)},
+    path: ${path.color(Pens.yellow)},
     element: $element,
-    method: ${method.name.toUpperCase()},
-    params: $params,
+    positionalParams: $positionalParams,
+    namedParams: $namedParams,
+    hasTypeHandler: ${hasTypeHandler.color()},
     returnType: $returnType,
-    hasTypeHandler: $hasTypeHandler,
   )'''
-      .color(AnsiPen()..cyan());
+      .color(Pens.cyan);
 }
